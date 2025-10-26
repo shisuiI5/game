@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🎮 Kids Maths Fun 3D — Farcaster Mini App</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, #0a0e13 0%, #1a1f2e 100%);
+    color: #e7ecf0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    padding: 20px;
+    overflow: hidden;
+  }
+  .wrap { width: min(900px, 96vw); position: relative; }
+  .card { background: #12171b; border: 1px solid #1f2a32; border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(8,11,14,.85); backdrop-filter: blur(4px); padding: 16px; z-index: 100; }
+  .hidden { display: none !important; }
+  
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 10px rgba(56,189,248,0.5);
+  }
+  
+  .muted {
+    color: #9aa7b1;
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 16px;
+  }
+  
+  .btn-primary {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #ff8c42, #ff6b1a);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,107,26,0.4);
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255,107,26,0.5);
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  #status {
+    margin-top: 15px;
+    font-size: 13px;
+    line-height: 1.5;
+    background: #0f151a;
+    border: 1px solid #1f2a32;
+    border-radius: 10px;
+    padding: 12px;
+  }
+  
+  #status b { color: #cde7d8; }
+  #status .ok { color: #4ade80; }
+  #status .warn { color: #fbbf24; }
+  #status .err { color: #f87171; }
+  #status a { color: #86c6ff; text-decoration: none; }
+  
+  #canvas {
+    background: transparent;
+    border-radius: 16px;
+    max-width: 100%;
+    display: block;
+    margin: 20px auto;
+    touch-action: none;
+  }
+  
+  .game-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .stats-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .stat-box {
+    background: linear-gradient(135deg, rgba(255,140,66,0.2), rgba(255,107,26,0.2));
+    border: 2px solid rgba(255,140,66,0.5);
+    border-radius: 12px;
+    padding: 10px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    color: #9aa7b1;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(255,140,66,0.5);
+  }
+  
+  .menu-card {
+    background: rgba(18,23,27,0.95);
+    border: 2px solid rgba(255,140,66,0.3);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .menu-title {
+    font-size: 36px;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #ff8c42, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .btn-menu {
+    padding: 20px;
+    background: linear-gradient(135deg, #38bdf8, #34d399);
+    border: none;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 16px;
+    color: #0a1929;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  
+  .btn-menu:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(56,189,248,0.5);
+  }
+  
+  .btn-menu.selected {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    box-shadow: 0 0 20px rgba(34,197,94,0.6);
+  }
+  
+  .question-box {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  .question-text {
+    font-size: 56px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(255,255,255,0.8);
+  }
+  
+  .answers-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+  }
+  
+  .answer-btn {
+    padding: 40px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 20px;
+    font-size: 40px;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 10px 30px rgba(99,102,241,0.4);
+  }
+  
+  .answer-btn:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(99,102,241,0.6);
+  }
+  
+  .answer-btn.correct {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    animation: pulse 0.5s ease-out;
+  }
+  
+  .answer-btn.wrong {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    animation: shake 0.5s ease-out;
+  }
+  
+  .answer-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .hearts {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  
+  .heart {
+    font-size: 28px;
+  }
+  
+  .feedback-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-weight: 900;
+    z-index: 200;
+    pointer-events: none;
+    animation: bounce 1s ease-out;
+  }
+  
+  .timer-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  
+  .timer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #fbbf24, #ef4444);
+    transition: width 1s linear;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+  
+  @keyframes bounce {
+    0%, 100% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  }
+  
+  @media (max-width: 720px) {
+    .question-text { font-size: 36px; }
+    .answer-btn { padding: 30px; font-size: 32px; }
+    .menu-title { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Intro Overlay -->
+    <div id="intro-overlay" class="overlay">
+      <div class="card" role="dialog" aria-modal="true">
+        <h1>🎮 Play Kids Maths Fun 3D</h1>
+        <p class="muted">A small Base transfer is required to start playing (mobile & desktop supported).</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div class="muted" style="font-size: 12px;">Change recipient/amount in code if needed.</div>
+          <button id="play" class="btn-primary">💰 Pay & Play</button>
+        </div>
+        <div id="status" class="hidden"></div>
+      </div>
+    </div>
+
+    <div class="game-container">
+      <canvas id="canvas" width="800" height="200"></canvas>
+      
+      <!-- Menu Screen -->
+      <div id="menu-screen" class="hidden">
+        <div class="menu-card">
+          <h2 class="menu-title">Choose Your Challenge</h2>
+          
+          <div style="margin-bottom: 20px;">
+            <div class="stat-label" style="text-align: center; margin-bottom: 10px;">DIFFICULTY</div>
+            <div class="btn-grid">
+              <button class="btn-menu difficulty-btn" data-difficulty="easy">Easy</button>
+              <button class="btn-menu difficulty-btn selected" data-difficulty="medium">Medium</button>
+              <button class="btn-menu difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+          </div>
+          
+          <div>
+            <div class="stat-label" style="text-align: center; margin-bottom: 10px;">OPERATION</div>
+            <div class="btn-grid">
+              <button class="btn-menu operation-btn" data-operation="addition">➕ Add</button>
+              <button class="btn-menu operation-btn" data-operation="subtraction">➖ Subtract</button>
+              <button class="btn-menu operation-btn" data-operation="multiplication">✖️ Multiply</button>
+              <button class="btn-menu operation-btn" data-operation="division">➗ Divide</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Playing Screen -->
+      <div id="playing-screen" class="hidden">
+        <div class="stats-bar">
+          <div class="stat-box" style="background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.2)); border-color: rgba(251,191,36,0.5);">
+            <div class="stat-label">SCORE</div>
+            <div class="stat-value" id="score-display">0</div>
+          </div>
+          <div class="stat-box" style="background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(147,51,234,0.2)); border-color: rgba(168,85,247,0.5);">
+            <div class="stat-label">LEVEL</div>
+            <div class="stat-value" id="level-display">1</div>
+          </div>
+          <div class="stat-box" style="background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.2)); border-color: rgba(239,68,68,0.5);">
+            <div class="stat-label">LIVES</div>
+            <div class="hearts" id="lives-display">
+              <span class="heart">❤️</span>
+              <span class="heart">❤️</span>
+              <span class="heart">❤️</span>
+            </div>
+          </div>
+          <div class="stat-box" style="background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(14,165,233,0.2)); border-color: rgba(56,189,248,0.5);">
+            <div class="stat-label">TIME</div>
+            <div class="stat-value" id="time-display">30</div>
+          </div>
+        </div>
+        
+        <div class="timer-bar">
+          <div class="timer-fill" id="timer-fill"></div>
+        </div>
+        
+        <div class="question-box">
+          <div class="question-text" id="question-text">Loading...</div>
+        </div>
+        
+        <div class="answers-grid" id="answers-grid">
+          <button class="answer-btn">?</button>
+          <button class="answer-btn">?</button>
+          <button class="answer-btn">?</button>
+          <button class="answer-btn">?</button>
+        </div>
+      </div>
+      
+      <!-- Game Over Screen -->
+      <div id="gameover-screen" class="hidden">
+        <div class="menu-card">
+          <h2 class="menu-title">🏆 Game Over!</h2>
+          <div style="text-align: center; margin: 20px 0;">
+            <div class="stat-label">FINAL SCORE</div>
+            <div style="font-size: 48px; font-weight: 900; color: #fbbf24; margin: 10px 0;" id="final-score">0</div>
+            <div class="stat-label">LEVEL REACHED</div>
+            <div style="font-size: 32px; font-weight: 900; color: #a78bfa; margin: 10px 0;" id="final-level">1</div>
+            <div class="stat-label">QUESTIONS ANSWERED</div>
+            <div style="font-size: 32px; font-weight: 900; color: #34d399;" id="questions-answered">0</div>
+          </div>
+          <button id="play-again" class="btn-primary" style="width: 100%; padding: 20px; font-size: 18px;">💰 Pay & Play Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+sdk.actions.ready();
+
+/* ===== CONFIG ===== */
+const USE_BASE_SEPOLIA = false;
+const RECIPIENT = "0x02212a875c56baE7AF27A5a389FD4e8A11442692";
+const AMOUNT_ETH = "0.00001";
+
+const BASE_MAINNET = { chainId: "0x2105",  explorer: "https://basescan.org/tx/" };
+const BASE_SEPOLIA = { chainId: "0x14a34", explorer: "https://sepolia.basescan.org/tx/" };
+const TARGET = USE_BASE_SEPOLIA ? BASE_SEPOLIA : BASE_MAINNET;
+
+/* ===== DOM ===== */
+const statusEl = document.getElementById('status');
+const playBtn = document.getElementById('play');
+const playAgainBtn = document.getElementById('play-again');
+const introOverlay = document.getElementById('intro-overlay');
+const menuScreen = document.getElementById('menu-screen');
+const playingScreen = document.getElementById('playing-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const showStatus = () => statusEl.classList.remove('hidden');
+const addLine = html => { showStatus(); statusEl.insertAdjacentHTML('beforeend', `<div>${html}</div>`); };
+const clearStatus = () => statusEl.innerHTML = '';
+const disable = (el, yes=true) => { if (el) el.disabled = yes; };
+
+/* ===== Wallet Helpers ===== */
+function parseEther(x) {
+  const [w, f=""] = String(x).split('.');
+  const frac = (f + '0'.repeat(18)).slice(0, 18);
+  return '0x' + (BigInt(w) * 10n**18n + BigInt(frac)).toString(16);
+}
+
+async function getProvider() {
+  try {
+    const p = await sdk.wallet.getEthereumProvider();
+    if (p) return p;
+  } catch {}
+  return window.ethereum ?? null;
+}
+
+async function ensureChain(provider, chainId) {
+  const current = (await provider.request({ method: 'eth_chainId' }))?.toLowerCase();
+  if (current === chainId.toLowerCase()) return;
+  try {
+    await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
+  } catch (e) {
+    if (e?.code === 4902) {
+      await provider.request({ method: 'wallet_addEthereumChain', params: [{ chainId }] });
+      await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
+    } else { throw e; }
+  }
+}
+
+async function requiredPayment() {
+  clearStatus();
+  addLine(`<b>Step 1:</b> Locating wallet provider…`);
+  const provider = await getProvider();
+  if (!provider) {
+    addLine(`<span class="err">No wallet available.</span> Open in Farcaster or enable a wallet.`);
+    throw new Error('NO_PROVIDER');
+  }
+  addLine(`<span class="ok">Provider ready.</span>`);
+
+  addLine(`<b>Step 2:</b> Requesting accounts…`);
+  const [from] = await provider.request({ method: 'eth_requestAccounts' });
+  addLine(`<span class="ok">Account: ${from.slice(0,6)}…${from.slice(-4)}</span>`);
+
+  addLine(`<b>Step 3:</b> Switching to Base${USE_BASE_SEPOLIA?' Sepolia':''}…`);
+  await ensureChain(provider, TARGET.chainId);
+  addLine(`<span class="ok">On Base${USE_BASE_SEPOLIA?' Sepolia':''}.</span>`);
+
+  addLine(`<b>Step 4:</b> Sending ${AMOUNT_ETH} ETH to ${RECIPIENT.slice(0,6)}…${RECIPIENT.slice(-4)}…`);
+  const hash = await provider.request({
+    method: 'eth_sendTransaction',
+    params: [{ from, to: RECIPIENT, value: parseEther(AMOUNT_ETH) }]
+  });
+  addLine(`<span class="ok">TX sent.</span> <a target="_blank" rel="noopener" href="${TARGET.explorer}${hash}">View on Basescan</a>`);
+  return hash;
+}
+
+async function payThen(action, triggerBtn) {
+  try {
+    disable(triggerBtn, true);
+    await requiredPayment();
+    await action();
+  } catch (e) {
+    console.warn('Payment gate blocked action:', e);
+    addLine(`<span class="warn">Payment required. Please try again.</span>`);
+  } finally {
+    disable(triggerBtn, false);
+  }
+}
+
+/* ===== GAME STATE ===== */
+let gameState = {
+  difficulty: 'medium',
+  operation: 'addition',
+  score: 0,
+  level: 1,
+  lives: 3,
+  timeLeft: 30,
+  maxTime: 30,
+  currentQuestion: null,
+  answers: [],
+  selectedAnswer: null,
+  questionsAnswered: 0,
+  streak: 0,
+  timerInterval: null,
+  particles: []
+};
+
+const difficultySettings = {
+  easy: { min: 1, max: 10, time: 30 },
+  medium: { min: 5, max: 50, time: 25 },
+  hard: { min: 10, max: 100, time: 20 }
+};
+
+/* ===== Canvas Animation ===== */
+function animateCanvas() {
+  ctx.fillStyle = 'rgba(10, 10, 30, 0.3)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Update particles
+  gameState.particles = gameState.particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.2;
+    p.life -= 0.02;
+    
+    if (p.life > 0) {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      return true;
+    }
+    return false;
+  });
+  
+  // Floating stars
+  const time = Date.now() * 0.001;
+  for (let i = 0; i < 10; i++) {
+    const x = (Math.sin(time * 0.5 + i) * 0.4 + 0.5) * canvas.width;
+    const y = (Math.cos(time * 0.3 + i * 0.5) * 0.4 + 0.5) * canvas.height;
+    const size = Math.sin(time * 2 + i) * 2 + 3;
+    
+    ctx.fillStyle = `hsl(${(time * 50 + i * 30) % 360}, 80%, 70%)`;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  requestAnimationFrame(animateCanvas);
+}
+
+function createParticles(count = 20) {
+  for (let i = 0; i < count; i++) {
+    gameState.particles.push({
+      x: Math.random() * canvas.width,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 1,
+      color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+      size: Math.random() * 6 + 3
+    });
+  }
+}
+
+/* ===== GAME LOGIC ===== */
+function generateQuestion() {
+  const settings = difficultySettings[gameState.difficulty];
+  let num1 = Math.floor(Math.random() * (settings.max - settings.min + 1)) + settings.min;
+  let num2 = Math.floor(Math.random() * (settings.max - settings.min + 1)) + settings.min;
+  let correctAnswer;
+  let questionText;
+
+  switch (gameState.operation) {
+    case 'addition':
+      correctAnswer = num1 + num2;
+      questionText = `${num1} + ${num2}`;
+      break;
+    case 'subtraction':
+      if (num1 < num2) [num1, num2] = [num2, num1];
+      correctAnswer = num1 - num2;
+      questionText = `${num1} - ${num2}`;
+      break;
+    case 'multiplication':
+      num1 = Math.floor(Math.random() * 12) + 1;
+      num2 = Math.floor(Math.random() * 12) + 1;
+      correctAnswer = num1 * num2;
+      questionText = `${num1} × ${num2}`;
+      break;
+    case 'division':
+      num2 = Math.floor(Math.random() * 10) + 1;
+      correctAnswer = Math.floor(Math.random() * 12) + 1;
+      num1 = num2 * correctAnswer;
+      questionText = `${num1} ÷ ${num2}`;
+      break;
+    default:
+      correctAnswer = num1 + num2;
+      questionText = `${num1} + ${num2}`;
+  }
+
+  const wrongAnswers = new Set();
+  while (wrongAnswers.size < 3) {
+    const offset = Math.floor(Math.random() * 10) - 5;
+    const wrongAnswer = correctAnswer + offset;
+    if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) {
+      wrongAnswers.add(wrongAnswer);
+    }
+  }
+
+  const allAnswers = [correctAnswer, ...Array.from(wrongAnswers)];
+  const shuffled = allAnswers.sort(() => Math.random() - 0.5);
+
+  gameState.currentQuestion = { text: questionText, answer: correctAnswer };
+  gameState.answers = shuffled;
+  gameState.selectedAnswer = null;
+  
+  document.getElementById('question-text').textContent = questionText + ' = ?';
+  
+  const answersGrid = document.getElementById('answers-grid');
+  answersGrid.innerHTML = '';
+  shuffled.forEach(answer => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = answer;
+    btn.onclick = () => handleAnswer(answer, btn);
+    answersGrid.appendChild(btn);
+  });
+}
+
+function handleAnswer(answer, btn) {
+  if (gameState.selectedAnswer !== null) return;
+  
+  gameState.selectedAnswer = answer;
+  const correct = answer === gameState.currentQuestion.answer;
+  
+  // Disable all buttons
+  document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+  
+  if (correct) {
+    btn.classList.add('correct');
+    createParticles(30);
+    showFeedback('✓ Correct!', '#22c55e');
+    
+    const points = (50 + gameState.streak * 10) * gameState.level;
+    gameState.score += points;
+    gameState.streak++;
+    gameState.questionsAnswered++;
+    
+    if (gameState.questionsAnswered % 5 === 0) {
+      gameState.level++;
+      document.getElementById('level-display').textContent = gameState.level;
+    }
+    
+    document.getElementById('score-display').textContent = gameState.score;
+    
+    setTimeout(() => {
+      generateQuestion();
+      startTimer();
+    }, 1500);
+  } else {
+    btn.classList.add('wrong');
+    showFeedback('✗ Wrong!', '#ef4444');
+    
+    gameState.streak = 0;
+    gameState.lives--;
+    updateLives();
+    
+    if (gameState.lives === 0) {
+      setTimeout(endGame, 1500);
+    } else {
+      setTimeout(() => {
+        generateQuestion();
+        startTimer();
+      }, 1500);
+    }
+  }
+}
+
+function showFeedback(text, color) {
+  const msg = document.createElement('div');
+  msg.className = 'feedback-message';
+  msg.textContent = text;
+  msg.style.color = color;
+  msg.style.textShadow = `0 0 60px ${color}`;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 1500);
+}
+
+function updateLives() {
+  const livesDisplay = document.getElementById('lives-display');
+  livesDisplay.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'heart';
+    heart.textContent = i < gameState.lives ? '❤️' : '🖤';
+    livesDisplay.appendChild(heart);
+  }
+}
+
+function startTimer() {
+  clearInterval(gameState.timerInterval);
+  const settings = difficultySettings[gameState.difficulty];
+  gameState.timeLeft = settings.time;
+  gameState.maxTime = settings.time;
+  
+  document.getElementById('time-display').textContent = gameState.timeLeft;
+  document.getElementById('timer-fill').style.width = '100%';
+  
+  gameState.timerInterval = setInterval(() => {
+    gameState.timeLeft--;
+    document.getElementById('time-display').textContent = gameState.timeLeft;
+    document.getElementById('timer-fill').style.width = (gameState.timeLeft / gameState.maxTime * 100) + '%';
+    
+    if (gameState.timeLeft <= 0) {
+      clearInterval(gameState.timerInterval);
+      handleAnswer(-999
