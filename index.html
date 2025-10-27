@@ -16,7 +16,7 @@
     align-items: center;
     min-height: 100dvh;
     padding: 20px;
-    overflow: hidden;
+    overflow-x: hidden;
   }
   .wrap { width: min(900px, 96vw); position: relative; }
   .card { background: #12171b; border: 1px solid #1f2a32; border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
@@ -369,12 +369,7 @@
           <div class="question-text" id="question-text">Loading...</div>
         </div>
         
-        <div class="answers-grid" id="answers-grid">
-          <button class="answer-btn">?</button>
-          <button class="answer-btn">?</button>
-          <button class="answer-btn">?</button>
-          <button class="answer-btn">?</button>
-        </div>
+        <div class="answers-grid" id="answers-grid"></div>
       </div>
       
       <!-- Game Over Screen -->
@@ -399,16 +394,14 @@
 import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
 sdk.actions.ready();
 
-/* ===== CONFIG ===== */
 const USE_BASE_SEPOLIA = false;
 const RECIPIENT = "0x02212a875c56baE7AF27A5a389FD4e8A11442692";
 const AMOUNT_ETH = "0.00001";
 
-const BASE_MAINNET = { chainId: "0x2105",  explorer: "https://basescan.org/tx/" };
+const BASE_MAINNET = { chainId: "0x2105", explorer: "https://basescan.org/tx/" };
 const BASE_SEPOLIA = { chainId: "0x14a34", explorer: "https://sepolia.basescan.org/tx/" };
 const TARGET = USE_BASE_SEPOLIA ? BASE_SEPOLIA : BASE_MAINNET;
 
-/* ===== DOM ===== */
 const statusEl = document.getElementById('status');
 const playBtn = document.getElementById('play');
 const playAgainBtn = document.getElementById('play-again');
@@ -424,7 +417,6 @@ const addLine = html => { showStatus(); statusEl.insertAdjacentHTML('beforeend',
 const clearStatus = () => statusEl.innerHTML = '';
 const disable = (el, yes=true) => { if (el) el.disabled = yes; };
 
-/* ===== Wallet Helpers ===== */
 function parseEther(x) {
   const [w, f=""] = String(x).split('.');
   const frac = (f + '0'.repeat(18)).slice(0, 18);
@@ -492,7 +484,6 @@ async function payThen(action, triggerBtn) {
   }
 }
 
-/* ===== GAME STATE ===== */
 let gameState = {
   difficulty: 'medium',
   operation: 'addition',
@@ -516,12 +507,10 @@ const difficultySettings = {
   hard: { min: 10, max: 100, time: 20 }
 };
 
-/* ===== Canvas Animation ===== */
 function animateCanvas() {
   ctx.fillStyle = 'rgba(10, 10, 30, 0.3)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Update particles
   gameState.particles = gameState.particles.filter(p => {
     p.x += p.vx;
     p.y += p.vy;
@@ -539,7 +528,6 @@ function animateCanvas() {
     return false;
   });
   
-  // Floating stars
   const time = Date.now() * 0.001;
   for (let i = 0; i < 10; i++) {
     const x = (Math.sin(time * 0.5 + i) * 0.4 + 0.5) * canvas.width;
@@ -573,13 +561,11 @@ function createParticles(count = 20) {
   }
 }
 
-/* ===== GAME LOGIC ===== */
 function generateQuestion() {
   const settings = difficultySettings[gameState.difficulty];
   let num1 = Math.floor(Math.random() * (settings.max - settings.min + 1)) + settings.min;
   let num2 = Math.floor(Math.random() * (settings.max - settings.min + 1)) + settings.min;
-  let correctAnswer;
-  let questionText;
+  let correctAnswer, questionText;
 
   switch (gameState.operation) {
     case 'addition':
@@ -612,23 +598,19 @@ function generateQuestion() {
   while (wrongAnswers.size < 3) {
     const offset = Math.floor(Math.random() * 10) - 5;
     const wrongAnswer = correctAnswer + offset;
-    if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) {
-      wrongAnswers.add(wrongAnswer);
-    }
+    if (wrongAnswer !== correctAnswer && wrongAnswer >= 0) wrongAnswers.add(wrongAnswer);
   }
 
-  const allAnswers = [correctAnswer, ...Array.from(wrongAnswers)];
-  const shuffled = allAnswers.sort(() => Math.random() - 0.5);
-
+  const allAnswers = [correctAnswer, ...Array.from(wrongAnswers)].sort(() => Math.random() - 0.5);
   gameState.currentQuestion = { text: questionText, answer: correctAnswer };
-  gameState.answers = shuffled;
+  gameState.answers = allAnswers;
   gameState.selectedAnswer = null;
   
   document.getElementById('question-text').textContent = questionText + ' = ?';
   
   const answersGrid = document.getElementById('answers-grid');
   answersGrid.innerHTML = '';
-  shuffled.forEach(answer => {
+  allAnswers.forEach(answer => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
     btn.textContent = answer;
@@ -643,8 +625,8 @@ function handleAnswer(answer, btn) {
   gameState.selectedAnswer = answer;
   const correct = answer === gameState.currentQuestion.answer;
   
-  // Disable all buttons
   document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+  clearInterval(gameState.timerInterval);
   
   if (correct) {
     btn.classList.add('correct');
@@ -723,4 +705,17 @@ function startTimer() {
     
     if (gameState.timeLeft <= 0) {
       clearInterval(gameState.timerInterval);
-      handleAnswer(-999
+      const wrongBtn = Array.from(document.querySelectorAll('.answer-btn')).find(b => parseInt(b.textContent) !== gameState.currentQuestion.answer);
+      if (wrongBtn) handleAnswer(parseInt(wrongBtn.textContent), wrongBtn);
+    }
+  }, 1000);
+}
+
+function endGame() {
+  clearInterval(gameState.timerInterval);
+  playingScreen.classList.add('hidden');
+  gameoverScreen.classList.remove('hidden');
+  
+  document.getElementById('final-score').textContent = gameState.score;
+  document.getElementById('final-level').textContent = gameState.level;
+  document.getElementById('questions-answere
